@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.docmall.mapper.OrderMapper">
+
+	<insert id="order_save" parameterType="com.docmall.domain.OrderVO">
+		<!-- keyProperty="ord_code" OrderVO에서 가져오는 필드명 -->
+		<!-- order="BEFORE" 인서트 문이 동작하기 전에 실행이 됨(주문번호로 사용될 시퀀스값 미리 확보). 반대는 after 
+		주문번호를 가지고 있는 상태이므로 인서트 문에 시퀀스값 안줌
+		-->
+		<selectKey keyProperty="ord_code" order="BEFORE" resultType="Long">
+			select seq_order_tbl.nextval from dual
+		</selectKey>
+		insert into order_tbl(ord_code, mbsp_id, ord_name, ord_addr_post, ord_addr_basic, ord_addr_detail, ord_tel, ord_price, pay_method)
+		values(#{ord_code} ,#{mbsp_id}, #{ord_name}, #{ord_addr_post}, #{ord_addr_basic}, #{ord_addr_detail}, #{ord_tel}, #{ord_price}, #{pay_method})
+	</insert>
+	
+	<insert id="order_detail_save">
+		insert into ORDETAIL_TBL(ord_code, pro_num, dt_amount, dt_price)
+		select #{ord_code}, c.pro_num, c.cart_amount, p.pro_price
+		from cart_tbl c inner join product_tbl p
+		on c.pro_num = p.pro_num
+	</insert>
+	
+	<insert id="payment_save">
+		insert into payment_tbl(pay_code, ord_code, mbsp_id, pay_method, pay_price, pay_user, pay_bank, pay_memo)
+		values(seq_payment_tbl.nextval, #{ord_code}, #{mbsp_id}, #{pay_method}, #{pay_price}, #{pay_user}, #{pay_bank}, #{pay_memo})
+	</insert>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

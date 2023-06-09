@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.docmall.mapper.ProductMapper">
+
+	<select id="getCategoryList" resultType="com.docmall.domain.CategoryVO">
+		
+		SELECT 
+			cat_code, cat_prtcode, cat_name 
+		FROM 
+			category_tbl 
+		WHERE 
+			cat_prtcode IS NULL 
+		
+	</select>
+	
+	<select id="subCategoryList" resultType="com.docmall.domain.CategoryVO">
+	
+		SELECT 
+			cat_code,cat_prtcode,cat_name 
+		FROM 
+			category_tbl 
+		WHERE	
+			cat_prtcode = #{cat_code}
+			
+	</select>
+	
+	<sql id="criteria">
+		<trim prefix="(" suffix=") AND " prefixOverrides="OR"> <!-- trim태그 sql구문중에  맨 앞에 or가 중복되면 제거  -->
+			<foreach collection="cri.typeArr" item="type">
+				<trim prefix="OR">
+					<choose>
+						<when test="type == 'N'.toString()">
+							pro_name like '%' || #{cri.keyword} || '%'
+						</when>
+						<when test="type == 'P'.toString()">
+							pro_publisher like '%' || #{cri.keyword} || '%'
+						</when>
+						
+					</choose>
+				</trim>
+			</foreach>
+		</trim>
+	</sql>
+	
+	<select id="pro_list" resultType="com.docmall.domain.ProductVO">
+	
+		SELECT RN, pro_num, cat_code, pro_name, pro_price, pro_discount, pro_publisher, pro_content, pro_up_folder, pro_img, pro_amount, pro_buy, pro_date, pro_updatedate
+		FROM (SELECT /*+INDEX_DESC(PRODUCT_TBL PK_PRO_NUM) */ ROWNUM RN, pro_num, cat_code, pro_name, pro_price, pro_discount, pro_publisher, pro_content, pro_up_folder, pro_img, pro_amount, pro_buy, pro_date, pro_updatedate
+       		  FROM PRODUCT_TBL 
+       		  where
+			  	cat_code = #{cat_code}
+			  and
+			  	pro_buy = 'Y'
+			  and
+       		   <include refid="criteria"></include>
+        <![CDATA[
+       		   ROWNUM <= (#{cri.pageNum} * #{cri.amount})) 
+		WHERE rn > ((#{cri.pageNum} - 1) * #{cri.amount})
+		]]>
+		
+	</select>
+	
+	<select id="pro_count" resultType="int">
+	
+		select count(*) from PRODUCT_TBL
+		where 
+			cat_code = #{cat_code}
+		and
+			pro_buy = 'Y'
+		and
+			<!-- 검색 부분 -->
+			<include refid="criteria"></include>
+		<!-- sql문이 둘다(include)들어 오기 때문에 문법에 문제가 없어야 하기 때문에 넣어줌 -->
+		pro_num > 0
+	
+	</select>
+	
+	<select id="pro_detail" resultType="com.docmall.domain.ProductVO">
+	
+		select
+			pro_num, cat_code, pro_name, pro_price, pro_discount, pro_publisher, pro_content, pro_up_folder, pro_img, pro_amount, pro_buy, pro_date, pro_updatedate
+		from
+			product_tbl
+		where
+			pro_num = #{pro_num}
+	</select>
+	
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

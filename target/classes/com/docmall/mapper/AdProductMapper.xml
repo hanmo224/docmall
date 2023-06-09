@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.docmall.mapper.AdProductMapper">
+
+	<select id="getCategoryList" resultType="com.docmall.domain.CategoryVO">
+		
+		SELECT 
+			cat_code, cat_prtcode, cat_name 
+		FROM 
+			category_tbl 
+		WHERE 
+			cat_prtcode IS NULL 
+		
+	</select>
+	
+	<select id="subCategoryList" resultType="com.docmall.domain.CategoryVO">
+	
+		SELECT 
+			cat_code,cat_prtcode,cat_name 
+		FROM 
+			category_tbl 
+		WHERE	
+			cat_prtcode = #{cat_code}
+			
+	</select>
+	
+	<insert id="pro_insert">
+	
+		insert into 
+			product_tbl(pro_num, cat_code, pro_name, pro_price, pro_discount, pro_publisher, pro_content, pro_up_folder, pro_img, pro_amount, pro_buy)
+		values
+			(seq_product_tbl.nextval, #{cat_code},#{pro_name},#{pro_price},#{pro_discount},#{pro_publisher},
+			#{pro_content},#{pro_up_folder},#{pro_img},#{pro_amount},#{pro_buy})
+	
+	</insert>
+	
+	<sql id="category">
+	
+		<if test="cat_code != null">
+		
+			cat_code = #{cat_code}
+			and
+		
+		</if>
+	
+	</sql>
+	
+	<!-- 검색조건 작업 : include로 참조 -->
+	<sql id="criteria">
+		<trim prefix="(" suffix=") AND " prefixOverrides="OR"> <!-- trim태그 sql구문중에  맨 앞에 or가 중복되면 제거  -->
+			<foreach collection="cri.typeArr" item="type">
+				<trim prefix="OR">
+					<choose>
+						<when test="cri.type == 'N'.toString()">
+							pro_name like '%' || #{cri.keyword} || '%'
+						</when>
+						<when test="cri.type == 'P'.toString()">
+							pro_publisher like '%' || #{cri.keyword} || '%'
+						</when>
+						
+					</choose>
+				</trim>
+			</foreach>
+		</trim>
+	</sql>
+	
+	<!-- 조건식 sql 사용 -->
+	<select id="getListWithPaging" resultType="com.docmall.domain.ProductVO">
+		SELECT RN, pro_num, cat_code, pro_name, pro_price, pro_discount, pro_publisher, pro_content, pro_up_folder, pro_img, pro_amount, pro_buy, pro_date, pro_updatedate
+		FROM (SELECT /*+INDEX_DESC(PRODUCT_TBL PK_PRO_NUM) */ ROWNUM RN, pro_num, cat_code, pro_name, pro_price, pro_discount, pro_publisher, pro_content, pro_up_folder, pro_img, pro_amount, pro_buy, pro_date, pro_updatedate
+       		  FROM PRODUCT_TBL 
+       		  where
+       		   <include refid="category"></include>
+       		   <include refid="criteria"></include>
+        <![CDATA[   
+       		   ROWNUM <= (#{cri.pageNum} * #{cri.amount}))
+		WHERE rn > ((#{cri.pageNum} - 1) * #{cri.amount})
+		]]>
+	</select>
+	
+	<!-- 조건식 sql 사용 -->
+	<select id="getTotalCount" resultType="int">
+		select count(*) from PRODUCT_TBL
+		where 
+		<!-- 검색 부분 -->
+		<include refid="category"></include>
+		<include refid="criteria"></include>
+		<!-- sql문이 둘다(include)들어 오기 때문에 문법에 문제가 없어야 하기 때문에 넣어줌 -->
+		pro_num > 0
+	</select>
+	
+	<select id="modify" resultType="com.docmall.domain.ProductVO">
+	
+		select 
+			pro_num, cat_code, pro_name, pro_price, pro_discount, pro_publisher, pro_content, pro_up_folder, pro_img, pro_amount, pro_buy, pro_date, pro_updatedate
+		from 
+			PRODUCT_TBL
+		where 
+			pro_num = #{pro_num}
+		
+	</select>
+	
+	<select id="get" resultType="com.docmall.domain.CategoryVO">
+	
+		SELECT 
+			cat_code, cat_prtcode, cat_name 
+		from 
+			category_tbl 
+		where 
+			cat_code = (SELECT cat_prtcode from category_tbl where cat_code = #{cat_code})
+	
+	</select>
+	
+	<update id="update">
+	
+		update
+			product_tbl
+		set
+			cat_code = #{cat_code}, pro_name = #{pro_name}, pro_price = #{pro_price}, pro_discount = #{pro_discount}, pro_publisher = #{pro_publisher}, pro_content = #{pro_content}, pro_up_folder = #{pro_up_folder}, pro_img = #{pro_img}, pro_amount = #{pro_amount}, pro_buy = #{pro_buy}, pro_updatedate = sysdate
+		where
+			pro_num = #{pro_num}
+	
+	</update>
+	
+	<delete id="delete">
+	
+		delete from product_tbl where pro_num = #{pro_num}
+	
+	</delete>
+	
+	<update id="pro_checked_modify">
+		
+		<foreach collection="list" item="item" open="declare begin" close="; end;" separator=";">
+		
+			update
+				product_tbl
+			set
+				pro_price = #{item.pro_price}, pro_buy = #{item.pro_buy}, pro_updatedate = sysdate
+			where
+				pro_num = #{item.pro_num}
+				
+		</foreach>
+		
+	</update>
+	 
+	 <!--  
+	 <update id="pro_checked_modify2">
+	 
+	 	update
+	 		product_tbl
+	 	set
+	 		pro_price = #{pro_price_arr}, pro_buy = #{pro_buy_arr}, pro_updatedate = sysdate
+	 	where
+	 		pro_num = #{pro_num_arr}
+	 
+	 </update>
+	 -->
+	 
+	<delete id="pro_checked_delete">
+	
+		delete from 
+			product_tbl 
+		where 
+			pro_num in
+			<!-- 반복되는 곳엔 foreach -->
+			<foreach collection="list" item="pro_num" open="(" close=")" separator=",">
+				#{pro_num}
+			</foreach> 
+	
+	</delete>
+	
+</mapper>  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

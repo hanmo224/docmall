@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd">
+
+	<!-- email.properties파일을 참조 -->
+	<context:property-placeholder location="/WEB-INF/spring/email/email.properties"/>
+	
+	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+	  <!-- 본인이 쓸 이메일 기능의 서버, gmail의 smtp서버 이름을 적어줌 -->
+	  <property name="host" value="smtp.gmail.com" />
+	  <property name="port" value="587" />
+	  
+	  <!-- 아래 value는 properties에 따로 썼으므로 소스를 오픈할때는 빼준다. -->
+	  <property name="username" value="${email.account}" />
+		<property name="password" value="${email.password}" />
+		  <property name="javaMailProperties">
+		  <props>
+		    <prop key="mail.smtp.auth">true</prop>
+		    <!-- 윈도우즈 운영체제 11버전(클라이언트)에 따라 TLS변환문제가 발생이 되는 듯 추측함. --> 
+            <!-- 리눅스에 올릴 거기 때문에 아래 구문은 빼줌
+		    <prop key="mail.smtp.ssl.trust">smtp.gmail.com</prop>
+			<prop key="mail.smtp.ssl.protocols">TLSv1.2</prop>
+			-->
+		    <prop key="mail.smtp.starttls.enable">true</prop>
+		  </props>
+		</property>
+	</bean>
+</beans>

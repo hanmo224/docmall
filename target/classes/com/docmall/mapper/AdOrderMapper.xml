@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.docmall.mapper.AdOrderMapper">
+
+	<sql id="period">
+		<if test="sDate != null and !sDate.equals('') and sDate != null and !sDate.equals('')">
+			<!-- 컬럼의 형변환 작업을 하지 말고 들어오는 값을 형변환 해줘야 성능 저하가 덜함. 변환 함수 to_date -->
+			<!-- https://thebook.io/006696/0110/ -->
+			<!-- eDate에 +1 이유는 그 전날 데이터를 가져오기 위함 -->
+			<![CDATA[
+			ord_regdate >= to_date(#{sDate}) 
+			and
+			ord_regdate < to_date(#{eDate}) + 1
+			and
+			]]>
+		</if>
+	</sql>
+	
+	<!-- 검색조건 작업 : include로 참조 -->
+	<sql id="criteria">
+		<trim prefix="(" suffix=") AND " prefixOverrides="OR"> <!-- trim태그 sql구문중에  맨 앞에 or가 중복되면 제거  -->
+			<foreach collection="cri.typeArr" item="type">
+				<trim prefix="OR">
+					<choose>
+						<when test="type == 'C'.toString()">
+							ord_code like '%' || #{cri.keyword} || '%'
+						</when>
+						<when test="type == 'I'.toString()">
+							mbsp_id like '%' || #{cri.keyword} || '%'
+						</when>
+						<when test="type == 'R'.toString()">
+							ord_name like '%' || #{cri.keyword} || '%'
+						</when>
+					</choose>
+				</trim>
+			</foreach>
+		</trim>
+	</sql>
+	
+	<!-- 조건식 sql 사용 -->
+	<select id="orderList" resultType="com.docmall.domain.OrderVO">
+	<!-- 별칭을 사용하면 인덱스 힌트 안에 별칭을 넣어주고 사용 안하면 테이블명을 넣어줌 -->
+		SELECT RN, ord_code, mbsp_id, ord_name, ord_price, ord_regdate, pay_method
+		FROM (select /* +index_desc(order_tbl pk_ord_code) */ rownum RN, ord_code, mbsp_id, ord_name, ord_price, ord_regdate, pay_method
+			  from order_tbl
+       		  where
+       		   <include refid="period"></include>
+       		   <include refid="criteria"></include>
+        <![CDATA[   
+       		   ROWNUM <= (#{cri.pageNum} * #{cri.amount}))
+		WHERE rn > ((#{cri.pageNum} - 1) * #{cri.amount})
+		]]>
+	</select>
+	
+	<!-- 조건식 sql 사용 -->
+	<select id="getTotalCount" resultType="int">
+		select count(*) from order_TBL
+		where 
+		<!-- 검색 부분 -->		
+		<include refid="period"></include>
+		<include refid="criteria"></include>
+		<!-- sql문이 둘다(include)들어 오기 때문에 문법에 문제가 없어야 하기 때문에 넣어줌 -->
+		ord_code > 0
+	</select>
+	
+	<select id="orderDetail" resultType="com.docmall.domain.AdOrderDetailVO">
+	
+		select 
+			ot.ord_code, ot.pro_num, ot.dt_amount, ot.dt_price, p.pro_name, p.pro_img, pro_up_folder
+		from 
+			ordetail_tbl ot inner join product_tbl p
+		on 
+			ot.pro_num = p.pro_num
+		where 
+			ot.ord_code = #{ord_code}
+	
+	</select>
+	
+	<delete id="orderDetailProdcutDelete">
+	
+		delete from 
+			ordetail_tbl
+		where 
+			ord_code = #{ord_code}
+		and 
+			pro_num = #{pro_num}
+	
+	</delete>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

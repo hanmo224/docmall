@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.docmall.mapper.CartMapper">
+	
+	<!-- 머지는 테이블에 데이터가 존재하면 업데이트 해주고 없으면 인서트 작업을 해줌, 단순히 인서트로 작업을 하면 똑같은 데이터를 넣었을때 업데이트가 안됨. -->
+	<insert id="cart_add">
+		
+		merge into cart_tbl
+		
+		using dual
+		
+		on (mbsp_id = #{mbsp_id} and pro_num = #{pro_num})
+			
+		when matched then
+		    update set cart_amount = cart_amount + #{cart_amount}
+		    
+		when not matched then
+		    insert(cart_code, pro_num, mbsp_id, cart_amount)
+		    values(seq_cart_code.nextval, #{pro_num}, #{mbsp_id}, #{cart_amount})
+	
+	</insert>
+	
+	<select id="cart_list" resultType="com.docmall.dto.CartListDTO">
+	
+		SELECT 
+			rownum num, C.cart_code, P.pro_up_folder, P.pro_img, p.pro_num, P.pro_name, P.pro_price, C.cart_amount, P.pro_price * C.cart_amount as unitprice
+		FROM 
+			product_tbl p INNER JOIN cart_tbl c
+		ON 
+			p.pro_num = c.pro_num
+		WHERE 
+			c.MBSP_ID = #{MBSP_ID}
+	
+	</select>
+	
+	<update id="cart_amount_change">
+		
+		update
+			cart_tbl
+		set
+			cart_amount = #{cart_amount}
+		where
+			cart_code = #{cart_code}
+	
+	</update>
+	
+	<delete id="cart_delete">
+	
+		delete from cart_tbl where cart_code = #{cart_code}
+	
+	</delete>
+	
+	<select id="cart_tot_price" resultType="int">
+		
+		SELECT 
+			sum(P.pro_price * C.cart_amount) as cart_tot_price
+		FROM 
+			product_tbl p INNER JOIN cart_tbl c
+		ON 
+			p.pro_num = c.pro_num
+		WHERE 
+			c.MBSP_ID = #{MBSP_ID}
+			
+	</select>
+	
+	<delete id="cart_empty">
+	
+		delete from cart_tbl where mbsp_id = #{mbsp_id}
+	
+	</delete>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
