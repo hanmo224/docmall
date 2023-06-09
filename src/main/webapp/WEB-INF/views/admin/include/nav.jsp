@@ -60,6 +60,7 @@
           </a>
           <ul class="treeview-menu">        
             <li><a href="/admin/order/order_list">주문목록</a></li>
+            <li><a href="#">주문취소</a></li>
             <li><a href="#">장바구니관리</a></li>
           </ul>
         </li>
